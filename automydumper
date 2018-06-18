@@ -14,7 +14,7 @@ mysql_password=''
 mysql_host='localhost'
 mysql_socket=
 threads=4
-mydumper_opts=''
+mydumper_opts='--less-locking --use-savepoints'
 enabled=1
 mail_rcpts=''
 mail_from="automydumper@${HOSTNAME}"
@@ -34,7 +34,7 @@ version="1.1.0"
 # What versions of Mydumper do we support?
 mydumper_versions='0.9'
 
-mydumper_opts="${mydumper_opts} --less-locking --triggers --events --routines -o ${backup_dir} -v 3 --use-savepoints --threads ${threads}"
+mydumper_opts="${mydumper_opts} --triggers --events --routines -o ${backup_dir} -v 3 --threads ${threads}"
 
 # Compression support
 [ $compress -eq 1 ] && mydumper_opts="$mydumper_opts --compress"
