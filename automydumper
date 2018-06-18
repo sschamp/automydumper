@@ -5,7 +5,7 @@ export PATH="$PATH:/bin:/usr/bin"
 # Defaults
 backup_root_dir='/var/backups/automydumper'
 backup_dir_format='+%F'
-log_dir='/var/log/automydumper'
+log_file='/var/log/automydumper.log'
 pre_dir='/usr/share/automydumper/pre.d'
 post_dir='/usr/share/automydumper/post.d'
 compress=1
@@ -34,8 +34,6 @@ backup_dir="${backup_root_dir}/${formatted_date}"
 version="1.1.0"
 # What versions of Mydumper do we support?
 mydumper_versions='0.9'
-
-log_file="${log_dir}/${formatted_date/\//_}.log"
 
 mydumper_opts="${mydumper_opts} --less-locking --triggers --events --routines -o ${backup_dir} -v 3 --use-savepoints --threads ${threads}"
 
@@ -128,7 +126,7 @@ function check_backup_root_dir()
 
 function create_directories()
 {
-    mkdir -p $(dirname "${backup_dir}") "${log_dir}" "${pre_dir}" "${post_dir}"
+    mkdir -p $(dirname "${backup_dir}") "${pre_dir}" "${post_dir}"
 }
 
 function cleanup_backups()
@@ -183,7 +181,7 @@ function mail_report()
 {
     if [ ! -z "${mail_rcpts}" ]; then
         echo "Sending mail report to '${mail_rcpts}' from '${mail_from}'"
-        mailx -s "Backup for $(hostname) ${1}" -r "${mail_from}" "${mail_rcpts}" < "${log_file}"
+        grep "^${formatted_date} " "${log_file}" | mailx -s "Backup for $(hostname) ${1}" -r "${mail_from}" "${mail_rcpts}"
     else
         echo -e "Not configured to send a mail report.\n"
     fi
@@ -192,7 +190,7 @@ function mail_report()
 
 function verify_backups()
 {
-    if grep WARNING "${log_file}" > /dev/null; then
+    if grep "^${formatted_date} " "${log_file}" | grep WARNING > /dev/null; then
         write_state "warning" "Backup completed with warnings."
         mail_report 'Warning'
     else
@@ -216,9 +214,7 @@ fi
 
 trap "{ write_state critical 'Backup failed.' ; mail_report 'failed'; exit 255; }" ERR
 
-mkdir -p "${log_dir}"
-
-exec > >(tee -i "${log_file}")
+exec > >(sed "s#^#${formatted_date} #" | tee -a -i "${log_file}")
 exec 2>&1
 
 check_backup_root_dir
