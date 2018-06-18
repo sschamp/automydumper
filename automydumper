@@ -5,7 +5,6 @@ export PATH="$PATH:/bin:/usr/bin"
 # Defaults
 backup_root_dir='/var/backups/automydumper'
 backup_dir_format='+%F'
-log_file='/var/log/automydumper.log'
 pre_dir='/usr/share/automydumper/pre.d'
 post_dir='/usr/share/automydumper/post.d'
 compress=1
@@ -214,7 +213,7 @@ fi
 
 trap "{ write_state critical 'Backup failed.' ; mail_report 'failed'; exit 255; }" ERR
 
-exec > >(sed "s#^#${formatted_date} #" | tee -a -i "${log_file}")
+exec > >(sed "/^\s*$/d;s#^#automydumper #" | tee -i >(exec logger -i))
 exec 2>&1
 
 check_backup_root_dir
